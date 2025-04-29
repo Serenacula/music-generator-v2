@@ -22,19 +22,6 @@ type NoteArray = Note[]
 type Score = Array<NoteWithLength | { note: "silence"; noteLength: number }>
 
 /**
- * Work in progress to turn this into a class
- */
-
-export class Music {
-    constructor(
-        public scaleType: ScaleType = "random",
-        public beatsInBar: number = 4,
-        public percentageDropped: number = 10,
-        public banRepeatedNotes: boolean = false
-    ) {}
-}
-
-/**
  * Builds a major scale out, based on the starting note
  */
 type ScaleType = "major" | "minor" | "random"
@@ -244,102 +231,33 @@ function generateChords(
     for (const note of melody) {
         i++
 
-        const dropRoot = Math.random() * 2 < 1
+        const chordLength = note.noteLength * beatsInBar
 
+        // We only consider the first note of each bar
         if (!(i % beatsInBar)) {
-            if (note.note !== "silence") {
-                const random = Math.floor(Math.random() * 4)
-                if (random === 0) {
-                    dropRoot ||
-                        chordFirstVoice.push({
-                            note: doubledScale[scale.indexOf(note.note)],
-                            noteLength: note.noteLength * beatsInBar,
-                        })
-                    chordSecondVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordThirdVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 4],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordFourthVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 6],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                } else if (random === 1) {
-                    chordFirstVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    dropRoot ||
-                        chordSecondVoice.push({
-                            note: doubledScale[scale.indexOf(note.note)],
-                            noteLength: note.noteLength * beatsInBar,
-                        })
-                    chordThirdVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordFourthVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 4],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                } else if (random === 2) {
-                    chordFirstVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 4],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordSecondVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    dropRoot ||
-                        chordThirdVoice.push({
-                            note: doubledScale[scale.indexOf(note.note)],
-                            noteLength: note.noteLength * beatsInBar,
-                        })
-                    chordFourthVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) + 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                } else {
-                    chordFirstVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 6],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordSecondVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 4],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    chordThirdVoice.push({
-                        note: doubledScale[scale.indexOf(note.note) - 2],
-                        noteLength: note.noteLength * beatsInBar,
-                    })
-                    dropRoot ||
-                        chordFourthVoice.push({
-                            note: doubledScale[scale.indexOf(note.note)],
-                            noteLength: note.noteLength * beatsInBar,
-                        })
-                }
-            } else {
-                chordFirstVoice.push({
-                    note: "silence",
-                    noteLength: note.noteLength * beatsInBar,
-                })
-                chordSecondVoice.push({
-                    note: "silence",
-                    noteLength: note.noteLength * beatsInBar,
-                })
-                chordThirdVoice.push({
-                    note: "silence",
-                    noteLength: note.noteLength * beatsInBar,
-                })
-                chordFourthVoice.push({
-                    note: "silence",
-                    noteLength: note.noteLength * beatsInBar,
-                })
-            }
+            // Choose a random note pattern
+            const notePattern = [
+                [-6, -4, -2, 0],
+                [-4, -2, 0, 2],
+                [-2, 0, 2, 4],
+                [0, 2, 4, 6],
+            ][Math.floor(Math.random() * 4)]
+
+            // Create the chord - each index shifts the note to a different harmonic
+            const noteObject = (index: number): typeof note => ({
+                note:
+                    note.note === "silence"
+                        ? "silence"
+                        : doubledScale[
+                              scale.indexOf(note.note) + notePattern[index]
+                          ],
+                noteLength: chordLength,
+            })
+
+            chordFirstVoice.push(noteObject(0))
+            chordSecondVoice.push(noteObject(1))
+            chordThirdVoice.push(noteObject(2))
+            chordFourthVoice.push(noteObject(3))
         }
     }
 
