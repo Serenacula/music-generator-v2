@@ -1,7 +1,264 @@
 ---
+import { notes } from "../code/music"
 import Layout from "../layouts/Layout.astro"
 ---
 
+<script>
+    import { getForm } from "../code/form"
+    import { musicFactory, type Score } from "../code/music"
+    import { soundFactory } from "../code/sound"
+
+    const sound = soundFactory()
+
+    // Set up visuals
+    const canvas = document.getElementById("sillyscope") as HTMLCanvasElement
+    const canvasCtx = canvas.getContext("2d")!
+    sound.drawSillyScope(canvas, canvasCtx)
+
+    let timeout: number | undefined
+    const playButton: HTMLButtonElement = document.querySelector(".play")!
+    playButton?.addEventListener("click", () => {
+        if (sound.endTime().getTime() > new Date().getTime()) {
+            sound.stop()
+            playButton.setHTMLUnsafe("Play")
+            clearTimeout(timeout)
+            timeout = undefined
+            return
+        }
+
+        /**
+         * MAKE THE MUSIC!
+         */
+
+        // not strictly necessary, these just make the inline script a bit cleaner
+        const form = getForm(document)
+        const music = musicFactory(form)
+        const playNotes = (
+            mergerNumber: number,
+            score: Score,
+            frequencyMult: number
+        ) =>
+            sound.playNotes(
+                mergerNumber,
+                score,
+                frequencyMult,
+                form.voiceSelect,
+                form.beatsPerMinuteInput
+            )
+
+        // building the scores
+        const scale = music.generateScale()
+        const rootNote = form.randomiseRootCheckbox
+            ? music.randomNote(scale)
+            : scale[0]
+        const melody = music.generateMelody(scale, rootNote)
+        const melody2 = music.generateMelody(
+            scale,
+            music.randomHarmonic(scale, rootNote)
+        )
+        const chords = music.generateChords(scale, melody)
+
+        playNotes(0, melody, 1)
+        form.secondMelodyCheckbox && playNotes(1, melody2, 1)
+        let i = 2
+        for (const chordChart of chords) {
+            playNotes(i, chordChart, form.chordMultiplierInput)
+            i++
+        }
+
+        playButton.setHTMLUnsafe("Stop")
+        timeout = setTimeout(() => {
+            sound.stop()
+            playButton.setHTMLUnsafe("Play")
+        }, sound.endTime().getTime() - new Date().getTime())
+    })
+</script>
+
 <Layout>
-    <h1>Music Generator</h1>
+    <main class="main">
+        <h1 class="title">Bad Music Generator</h1>
+        <canvas id="sillyscope" width="1028" class="sillyscope"></canvas>
+        <div>
+            <button class="play">Play</button>
+        </div>
+        <div>
+            {
+                /* <div className={styles.display}>
+                <h1>
+                    {getDisplayNotes}
+                </h1>
+            </div> */
+            }
+
+            <label>
+                <select name="voice" class="voice">
+                    <option value="sine" selected>Sine</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="square">Square</option>
+                </select>
+                Voice: changes the sound produced.
+            </label>
+            <label>
+                <select name="scale" class="scale">
+                    <option value="random" selected>Random</option>
+                    {notes.map((note) => <option value={note}>{note}</option>)}
+                </select>
+                Scale Key
+            </label>
+            <label>
+                <select name="scaleType" class="scaleType" value="major">
+                    <option value="random">Random</option>
+                    <option value="major" selected>Major</option>
+                    <option value="minor">Minor</option>
+                </select>
+                Scale Type
+            </label>
+            <label>
+                <input
+                    type="number"
+                    name="quantity"
+                    class="beatsPerMinute"
+                    value="240"
+                    min="1"
+                    max="9999"
+                    step="1"
+                />
+                Beats Per Minute
+            </label>
+            <label>
+                <input
+                    type="number"
+                    name="quantity"
+                    class="beatsInBar"
+                    value="4"
+                    min="1"
+                    max="48"
+                    step="1"
+                />
+                Beats in a Bar
+            </label>
+
+            <label>
+                <input
+                    type="number"
+                    name="quantity"
+                    class="chordMultiplier"
+                    value="0.5"
+                    min="0.01"
+                    max="4.00"
+                    step="0.01"
+                />
+                Chord Frequency Multiplier: sets the frequency of the chords, relative
+                to the melody. 0.5 = 1 octave down, 0.66 = a harmonic up from that,
+                etc.
+            </label>
+
+            <label>
+                <input
+                    type="number"
+                    name="quantity"
+                    class="percentDropped"
+                    value="10"
+                    min="1"
+                    max="100"
+                    step="1"
+                />
+                Percentage of Notes Dropped: this is what produces an interesting
+                rhythm. 10-20% is recommended
+            </label>
+            <label>
+                <input
+                    type="checkbox"
+                    name="banRepeatedNotes"
+                    class="banRepeatedNotes"
+                />
+                Ban Repeated Notes: when generating a random string of notes in a
+                bar, it will attempt to avoid repetition
+                {
+                    /* Note: If the number of beats in a bar is bigger than the number of notes in the scale, this won't work. */
+                }
+            </label>
+            <label>
+                <input
+                    type="checkbox"
+                    name="randomiseRoot"
+                    class="randomiseRoot"
+                />
+                Randomise Root Note: pretends that the root note of the scale is
+                a different note
+            </label>
+            <label>
+                <input
+                    type="checkbox"
+                    name="secondMelody"
+                    class="secondMelody"
+                />
+                Second Melody: Adds a second melody
+            </label>
+            <label>
+                <input
+                    type="checkbox"
+                    name="jazzHarmonies"
+                    class="jazzHarmonies"
+                />
+                Jazz Harmonies: 7ths are also considered a harmonic note, in the
+                melody
+            </label>
+            <label>
+                <input type="checkbox" name="jazzChords" class="jazzChords" />
+                <!-- Jazz Chords: Chords will drop the root in favour of the 7th -->
+                Jazz Chords: Chords will include 4 notes, with the 7th as a harmonic
+            </label>
+        </div>
+    </main>
 </Layout>
+
+<style>
+    .main {
+        /* width: 100vw; */
+        min-height: 100vh;
+
+        display: flex;
+        flex-direction: column;
+        /* justify-content: center; */
+        align-items: center;
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: -6px;
+
+        margin-top: 44px;
+    }
+
+    .sillyscope {
+        width: 100vw;
+        /* max-height: 150px; */
+        /* min-height: 50px; */
+        height: 100px;
+    }
+
+    .main > * > * {
+        display: block;
+        margin-bottom: 24px;
+    }
+
+    select,
+    input {
+        margin-right: 16px;
+    }
+
+    .play {
+        /* margin-left: calc(50% - 100px);
+    margin-top: 50%; */
+        display: block;
+        margin-top: 2px;
+        margin-bottom: 50px;
+
+        width: 200px;
+        height: 100px;
+
+        font-size: 32px;
+    }
+</style>

@@ -1,4 +1,6 @@
-const notes = [
+import type { Form } from "./form"
+
+export const notes = [
     "C",
     "C#",
     "D",
@@ -13,22 +15,23 @@ const notes = [
     "B",
 ] as const
 
-type Note = (typeof notes)[number]
-type NoteWithLength = {
+export type Note = (typeof notes)[number]
+export type NoteWithLength = {
     note: Note
     noteLength: number
 }
-type NoteArray = Note[]
-type Score = Array<NoteWithLength | { note: "silence"; noteLength: number }>
+export type Score = Array<
+    NoteWithLength | { note: "silence"; noteLength: number }
+>
 
 /**
  * Builds a major scale out, based on the starting note
  */
-type ScaleType = "major" | "minor" | "random"
+export type ScaleType = "major" | "minor" | "random"
 function generateScale(
     rootNote: Note,
     scaleType: ScaleType = "random"
-): NoteArray {
+): Note[] {
     const major = [0, 2, 4, 5, 7, 9, 11]
     const minor = [0, 2, 3, 5, 7, 9, 11]
     const scaleMap = {
@@ -48,7 +51,7 @@ function generateScale(
  * Returns a random note. Can optionally ban notes, and specify a scale to use.
  * If no scale is specified, it will use the complete spectrum of notes.
  */
-function randomNote(scale?: NoteArray, bannedNotes?: Note[]): Note {
+function randomNote(scale?: Note[], bannedNotes?: Note[]): Note {
     const filteredScale = (scale ?? notes).filter(
         (note) => !bannedNotes?.includes(note)
     )
@@ -60,7 +63,7 @@ function randomNote(scale?: NoteArray, bannedNotes?: Note[]): Note {
 }
 
 function randomHarmonic(
-    scale: NoteArray,
+    scale: Note[],
     rootNote: Note,
     includeJazz: boolean
 ): Note {
@@ -89,24 +92,36 @@ function removeRandomNotes(
     return result
 }
 
-function barOfNotes(scale: NoteArray, beatsInBar: number, startingNote?: Note) {
+function barOfNotes(
+    scale: Note[],
+    beatsInBar: number,
+    banRepeatedNotes: boolean,
+    startingNote?: Note
+) {
     if (Math.random() * 10 >= 5) {
-        return barOfRandomNotes(scale, beatsInBar, startingNote)
+        return barOfRandomNotes(
+            scale,
+            beatsInBar,
+            banRepeatedNotes,
+            startingNote
+        )
     } else {
         return barOfScaledNotes(scale, beatsInBar, startingNote)
     }
 }
 
 function barOfRandomNotes(
-    scale: NoteArray,
+    scale: Note[],
     beatsInBar: number,
+    banRepeatedNotes: boolean,
     startingNote?: Note
-): NoteArray {
-    const result: NoteArray = []
+): Note[] {
+    const result: Note[] = []
     startingNote && result.push(startingNote)
     for (let i = startingNote ? 1 : 0; i < beatsInBar; i++) {
         // Banned notes here just makes sure we don't repeat the same note inside a single bar
-        const bannedNotes = result < scale ? result : undefined
+        const bannedNotes =
+            banRepeatedNotes && result < scale ? result : undefined
         result.push(randomNote(scale, bannedNotes))
     }
 
@@ -114,13 +129,13 @@ function barOfRandomNotes(
 }
 
 function barOfScaledNotes(
-    scale: NoteArray,
+    scale: Note[],
     beatsInBar: number,
     startingNote?: Note
-): NoteArray {
+): Note[] {
     const doubledNotes = [...scale, ...scale]
 
-    const result: NoteArray = []
+    const result: Note[] = []
     result.push(startingNote || randomNote(scale))
 
     let previousNote: Note = result[0]
@@ -160,21 +175,29 @@ function barOfScaledNotes(
 }
 
 function randomPhrase(
-    scale: NoteArray,
+    scale: Note[],
     beatsInBar: number,
+    banRepeatedNotes: boolean,
     includeJazz: boolean,
     firstNote: Note = scale[0]
-): NoteArray {
-    const firstNoteSet = barOfRandomNotes(scale, beatsInBar, firstNote)
+): Note[] {
+    const firstNoteSet = barOfRandomNotes(
+        scale,
+        beatsInBar,
+        banRepeatedNotes,
+        firstNote
+    )
 
     const secondNoteSet = barOfNotes(
         scale,
         beatsInBar,
+        banRepeatedNotes,
         randomHarmonic(scale, firstNote, includeJazz)
     )
     const thirdNoteSet = barOfNotes(
         scale,
         beatsInBar,
+        banRepeatedNotes,
         randomHarmonic(scale, firstNote, includeJazz)
     )
 
@@ -191,17 +214,30 @@ function randomPhrase(
 }
 
 function generateMelody(
-    scale: NoteArray,
+    scale: Note[],
     includeJazz: boolean,
+    banRepeatedNotes: boolean,
     beatsInBar: number,
     dropPercentage: number,
     rootNote: Note = scale[0]
 ): Score {
-    const firstPhrase = randomPhrase(scale, beatsInBar, includeJazz, rootNote)
-    const melody: NoteArray = [
+    const firstPhrase = randomPhrase(
+        scale,
+        beatsInBar,
+        includeJazz,
+        banRepeatedNotes,
+        rootNote
+    )
+    const melody: Note[] = [
         ...firstPhrase,
         ...firstPhrase,
-        ...randomPhrase(scale, beatsInBar, includeJazz, rootNote),
+        ...randomPhrase(
+            scale,
+            beatsInBar,
+            includeJazz,
+            banRepeatedNotes,
+            rootNote
+        ),
         ...firstPhrase,
     ]
 
@@ -216,7 +252,7 @@ function generateMelody(
 }
 
 function generateChords(
-    scale: NoteArray,
+    scale: Note[],
     melody: Score,
     beatsInBar: number,
     jazzChords: boolean
@@ -268,3 +304,31 @@ function generateChords(
 
     return result
 }
+
+export const musicFactory = (form: Form) => ({
+    generateMelody: (scale: Note[], rootNote?: Note) =>
+        generateMelody(
+            scale,
+            form.jazzHarmoniesCheckbox,
+            form.banRepeatedNotesCheckbox,
+            form.beatsInBarInput,
+            form.percentDroppedInput,
+            rootNote
+        ),
+    generateChords: (scale: Note[], melody: Score) =>
+        generateChords(
+            scale,
+            melody,
+            form.beatsInBarInput,
+            form.jazzChordsCheckbox
+        ),
+    generateScale: () =>
+        generateScale(
+            form.scaleSelect === "random" ? randomNote() : form.scaleSelect,
+            form.scaleTypeSelect
+        ),
+    randomNote: (scale?: Note[], bannedNotes?: Note[]) =>
+        randomNote(scale, bannedNotes),
+    randomHarmonic: (scale: Note[], rootNote: Note) =>
+        randomHarmonic(scale, rootNote, form.jazzHarmoniesCheckbox),
+})
