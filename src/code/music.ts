@@ -306,7 +306,7 @@ function generateChords(
 }
 
 export const musicFactory = (form: Form) => ({
-    generateMelody: (scale: Note[], rootNote?: Note) =>
+    generateMelody: (scale: Note[], rootNote?: Note): Score =>
         generateMelody(
             scale,
             form.jazzHarmoniesCheckbox,
@@ -315,20 +315,20 @@ export const musicFactory = (form: Form) => ({
             form.percentDroppedInput,
             rootNote
         ),
-    generateChords: (scale: Note[], melody: Score) =>
+    generateChords: (scale: Note[], melody: Score): Score[] =>
         generateChords(
             scale,
             melody,
             form.beatsInBarInput,
             form.jazzChordsCheckbox
         ),
-    generateScale: () =>
+    generateScale: (): Note[] =>
         generateScale(
             form.scaleSelect === "random" ? randomNote() : form.scaleSelect,
             form.scaleTypeSelect
         ),
-    randomNote: (scale?: Note[], bannedNotes?: Note[]) =>
+    randomNote: (scale?: Note[], bannedNotes?: Note[]): Note =>
         randomNote(scale, bannedNotes),
-    randomHarmonic: (scale: Note[], rootNote: Note) =>
+    randomHarmonic: (scale: Note[], rootNote: Note): Note =>
         randomHarmonic(scale, rootNote, form.jazzHarmoniesCheckbox),
 })

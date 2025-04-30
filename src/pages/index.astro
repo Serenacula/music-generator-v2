@@ -8,6 +8,7 @@ import Layout from "../layouts/Layout.astro"
     import { musicFactory, type Score } from "../code/music"
     import { soundFactory } from "../code/sound"
 
+    // Initiate core sound stuff
     const sound = soundFactory()
 
     // Set up visuals
@@ -15,9 +16,10 @@ import Layout from "../layouts/Layout.astro"
     const canvasCtx = canvas.getContext("2d")!
     sound.drawSillyScope(canvas, canvasCtx)
 
+    // Tracking timeout, to avoid it stopping the sound during an unrelated playthrough
     let timeout: number | undefined
     const playButton: HTMLButtonElement = document.querySelector(".play")!
-    playButton?.addEventListener("click", () => {
+    playButton.addEventListener("click", () => {
         if (sound.endTime().getTime() > new Date().getTime()) {
             sound.stop()
             playButton.setHTMLUnsafe("Play")

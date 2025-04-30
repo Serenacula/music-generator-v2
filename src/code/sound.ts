@@ -1,10 +1,6 @@
 import type { Score } from "./music"
 import { drawSillyScope } from "./sillyscope"
 
-type PlayableFrequencies = Array<{
-    frequency: number | null
-    noteLength: number
-}>
 const noteMap = {
     "C": 261.63,
     "C#": 277.18,
@@ -20,7 +16,14 @@ const noteMap = {
     "B": 493.88,
 }
 
-function convertToFrequencies(score: Score, frequencyMultiplier: number) {
+type PlayableFrequencies = Array<{
+    frequency: number | null
+    noteLength: number
+}>
+function convertToFrequencies(
+    score: Score,
+    frequencyMultiplier: number
+): PlayableFrequencies {
     return score.map((note) => {
         return {
             frequency:
