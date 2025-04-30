@@ -20,6 +20,7 @@ import Layout from "../layouts/Layout.astro"
     let timeout: number | undefined
     const playButton: HTMLButtonElement = document.querySelector(".play")!
     playButton.addEventListener("click", () => {
+        // something already playing
         if (sound.endTime().getTime() > new Date().getTime()) {
             sound.stop()
             playButton.setHTMLUnsafe("Play")
