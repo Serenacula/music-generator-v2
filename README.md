@@ -19,3 +19,4 @@ The code for this one is pretty simple:
 -   Building out the layout of the song from chunks
 -   More options
 -   More sound manipulations
+-   Wonder if we could get some cool visual art, pulling from the music generated..?
