@@ -128,14 +128,14 @@ export const soundFactory = () => {
             return
         },
         playNotes: (
-            mergerNumber: number,
             score: Score,
-            frequencyMultiplier: number,
             voice: OscillatorType,
             beatsPerMinute: number,
+            frequencyMultiplier = 1,
             timeDelay = 0
         ): SongPlaying => {
             audioContext.resume()
+            const mergerNumber = currentlyPlaying.length
 
             const result = playNotes(
                 audioContext,
