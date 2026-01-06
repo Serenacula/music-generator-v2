@@ -10,7 +10,7 @@ The code for this one is pretty simple:
     - This includes defining how many beats notes are
 4. sound.ts: Managing the actual sound and web AudioAPI
     - This includes a tie-in with the sillyscope because it was easier
-5. sillyscope.ts: Generation code for the sillyscope
+5. sillyscope.ts: Generation code for the oscilloscope
 
 ## Future feature plans:
 
